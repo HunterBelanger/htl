@@ -6,8 +6,8 @@
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
  *
- *  1. Redistributions of source code must retain the above copyright notice, this
- *     list of conditions and the following disclaimer.
+ *  1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
  *  2. Redistributions in binary form must reproduce the above copyright notice,
  *     this list of conditions and the following disclaimer in the documentation
@@ -19,14 +19,15 @@
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- *  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  *
  * */
 #ifndef HTL_SHARED_SPAN
@@ -42,16 +43,16 @@ namespace htl {
  *  Class: htl::shared_span<T>
  *
  *  Description: This class provides an object similar in spirit to a standard
- *  std::span (C++20 standard), accept that the span owns the data, via a
- *  std::shared_ptr. In this manner, multiple shared_span object can point to
+ *  std::span (C++20 standard), except that the span owns the data, via a
+ *  std::shared_ptr. In this manner, multiple shared_span objects can point to
  *  the same data set, without requiring that the true data be stored in
  *  another object, which could eventually be destroyed, or invalidated (via a
  *  push_back to a std::vector for example). The data must be initialized when
  *  the shared_span is created, and data cannot be added after. Other spans over
- *  the same data can be made, which reference only subsets of the full data
- *  set. This class has more or less the same interface as for std::span, with
- *  the addition of the use_count method, which functions the same way as it
- *  does with std::shared_ptr, giving the number of instances which use the
+ *  the same data can be made, which may reference any subset of the full data
+ *  set. This class has more or less the same interface as std::span, with the
+ *  addition of the use_count method, which functions the same way as it does
+ *  with std::shared_ptr, giving the number of instances which use the
  *  underlying data set. The underlying data is only deleted when the last
  *  instance of shared_span using that data is destroyed. This also ensures
  *  that all shared_spans remain valid for the duration of the existance. The
@@ -59,7 +60,7 @@ namespace htl {
  *  span, instead of using a pointer and size. This is done to facilitate
  *  serialization of shared_span instances, as many serialization libraries
  *  (such as cereal) cannot serialize raw pointers, only smart pointers. This
- *  allows the class to be easily modified work with serialization libraries.
+ *  allows the class to be easily modified to work with such libraries.
  *
  * */
 template <class T>
@@ -78,10 +79,9 @@ class shared_span {
   using reverse_iterator = std::reverse_iterator<iterator>;
 
   // constructors, copy, move, and assignment
-  shared_span(const std::vector<element_type>& vec);
-  shared_span(std::initializer_list<element_type> init);
   template <class InputIt>
   shared_span(InputIt first, InputIt last);
+  shared_span(std::initializer_list<element_type> init);
   shared_span(const shared_span& other, std::size_t Offset, std::size_t Count);
 
   shared_span(const shared_span& other) = default;
@@ -119,15 +119,7 @@ class shared_span {
 };
 
 template <class T>
-shared_span<T>::shared_span(const std::vector<element_type>& vec)
-    : data_{nullptr}, begin_{0}, end_{0} {
-  data_ = std::make_shared<std::vector<element_type>>(vec);
-  begin_ = 0;
-  end_ = vec.size();
-}
-
-template <class T>
-shared_span<T>::shared_span(std::initializer_list<element_type> init)
+inline shared_span<T>::shared_span(std::initializer_list<element_type> init)
     : data_{nullptr}, begin_{0}, end_{0} {
   data_ = std::make_shared<std::vector<element_type>>(init);
   begin_ = 0;
@@ -136,7 +128,7 @@ shared_span<T>::shared_span(std::initializer_list<element_type> init)
 
 template <class T>
 template <class InputIt>
-shared_span<T>::shared_span(InputIt first, InputIt last)
+inline shared_span<T>::shared_span(InputIt first, InputIt last)
     : data_{nullptr}, begin_{0}, end_{0} {
   data_ = std::make_shared<std::vector<element_type>>(first, last);
   begin_ = 0;
@@ -144,96 +136,98 @@ shared_span<T>::shared_span(InputIt first, InputIt last)
 }
 
 template <class T>
-shared_span<T>::shared_span(const shared_span& other, std::size_t Offset,
-                            std::size_t Count)
+inline shared_span<T>::shared_span(const shared_span& other, std::size_t Offset,
+                                   std::size_t Count)
     : data_{other.data_}, begin_{other.begin_}, end_{other.end_} {
   begin_ += Offset;
   if (begin_ + Count <= end_) end_ = begin_ + Count;
 }
 
 template <class T>
-constexpr shared_span<T> shared_span<T>::first(std::size_t Count) const {
+inline constexpr shared_span<T> shared_span<T>::first(std::size_t Count) const {
   return shared_span(*this, 0, Count);
 }
 
 template <class T>
-constexpr shared_span<T> shared_span<T>::last(std::size_t Count) const {
+inline constexpr shared_span<T> shared_span<T>::last(std::size_t Count) const {
   if (Count > (end_ - begin_)) return shared_span(*this);
   return shared_span(*this, end_ - Count, end_);
 }
 
 template <class T>
-constexpr shared_span<T> shared_span<T>::subspan(std::size_t Offset,
-                                                 std::size_t Count) const {
+inline constexpr shared_span<T> shared_span<T>::subspan(
+    std::size_t Offset, std::size_t Count) const {
   return {*this, Offset, Count};
 }
 
 template <class T>
-constexpr typename shared_span<T>::size_type shared_span<T>::size() const
+inline constexpr typename shared_span<T>::size_type shared_span<T>::size() const
     noexcept {
   return end_ - begin_;
 }
 
 template <class T>
-constexpr typename shared_span<T>::size_type shared_span<T>::size_bytes() const
-    noexcept {
-  return this->size() * sizeof(element_type);
+inline constexpr typename shared_span<T>::size_type shared_span<T>::size_bytes()
+    const noexcept {
+  return (end_ - begin_) * sizeof(element_type);
 }
 
 template <class T>
-constexpr bool shared_span<T>::empty() const noexcept {
-  return (this->size()) > 0;
+inline constexpr bool shared_span<T>::empty() const noexcept {
+  return (end_ - begin_) == 0;
 }
 
 template <class T>
-long shared_span<T>::use_count() const noexcept {
+inline long shared_span<T>::use_count() const noexcept {
   return data_.use_count();
 }
 
 template <class T>
-constexpr typename shared_span<T>::reference shared_span<T>::operator[](
+inline constexpr typename shared_span<T>::reference shared_span<T>::operator[](
     size_type idx) const {
   return (*data_)[begin_ + idx];
 }
 
 template <class T>
-constexpr typename shared_span<T>::reference shared_span<T>::front() const {
+inline constexpr typename shared_span<T>::reference shared_span<T>::front()
+    const {
   return (*data_)[begin_];
 }
 
 template <class T>
-constexpr typename shared_span<T>::reference shared_span<T>::back() const {
+inline constexpr typename shared_span<T>::reference shared_span<T>::back()
+    const {
   return (*data_)[end_ - 1];
 }
 
 template <class T>
-constexpr typename shared_span<T>::pointer shared_span<T>::data() const
+inline constexpr typename shared_span<T>::pointer shared_span<T>::data() const
     noexcept {
   return data_->data() + begin_;
 }
 
 template <class T>
-constexpr typename shared_span<T>::iterator shared_span<T>::begin() const
+inline constexpr typename shared_span<T>::iterator shared_span<T>::begin() const
     noexcept {
   return data_->data() + begin_;
 }
 
 template <class T>
-constexpr typename shared_span<T>::iterator shared_span<T>::end() const
+inline constexpr typename shared_span<T>::iterator shared_span<T>::end() const
     noexcept {
   return data_->data() + end_;
 }
 
 template <class T>
-constexpr typename shared_span<T>::reverse_iterator shared_span<T>::rbegin()
-    const noexcept {
-  return reverse_iterator(data_->data() + end_ - 1);
+inline constexpr typename shared_span<T>::reverse_iterator
+shared_span<T>::rbegin() const noexcept {
+  return reverse_iterator(data_->data() + end_);
 }
 
 template <class T>
-constexpr typename shared_span<T>::reverse_iterator shared_span<T>::rend() const
-    noexcept {
-  return reverse_iterator(data_->data() + begin_ - 1);
+inline constexpr typename shared_span<T>::reverse_iterator
+shared_span<T>::rend() const noexcept {
+  return reverse_iterator(data_->data() + begin_);
 }
 
 };  // namespace htl
