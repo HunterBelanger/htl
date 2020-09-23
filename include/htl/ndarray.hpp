@@ -20,14 +20,14 @@
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
  *
  * */
 #ifndef HTL_NDARRAY
@@ -42,7 +42,7 @@ namespace htl {
 /*
  *  Class: htl::ndarray<T>
  *
- *  Description: 
+ *  Description:
  *
  * */
 template <class T>
@@ -62,9 +62,10 @@ class ndarray {
   using const_reverse_iterator = const reverse_iterator;
 
   // constructors, copy, move, and assignment
-  template<typename... SHAPE>
+  template <typename... SHAPE>
   ndarray(SHAPE... shape, const_reference value = T(), bool row_major = true);
-  ndarray(std::vector<size_type> shape, const_reference value = T(), bool row_major = true);
+  ndarray(std::vector<size_type> shape, const_reference value = T(),
+          bool row_major = true);
 
   ndarray(const ndarray& other) = default;
   ndarray(ndarray&& other) = default;
@@ -80,14 +81,14 @@ class ndarray {
   // element access
   constexpr reference operator[](size_type idx);
   constexpr const_reference operator[](size_type idx) const;
-  
+
   template <typename... INDS>
   constexpr reference operator()(INDS... inds);
   template <typename... INDS>
   constexpr const_reference operator()(INDS... inds) const;
   constexpr reference operator()(std::vector<size_type> idx);
   constexpr const_reference operator()(std::vector<size_type> idx) const;
- 
+
   template <typename... INDS>
   constexpr reference at(INDS... inds);
   template <typename... INDS>
