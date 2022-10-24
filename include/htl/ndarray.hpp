@@ -1,130 +1,458 @@
-/*  BSD 3-Clause License
- *
- *  Copyright (c) 2020, Hunter Belanger (hunter.belanger@gmail.com)
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions are met:
- *
- *  1. Redistributions of source code must retain the above copyright notice,
- *     this list of conditions and the following disclaimer.
- *
- *  2. Redistributions in binary form must reproduce the above copyright notice,
- *     this list of conditions and the following disclaimer in the documentation
- *     and/or other materials provided with the distribution.
- *
- *  3. Neither the name of the copyright holder nor the names of its
- *     contributors may be used to endorse or promote products derived from
- *     this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *
- * */
-#ifndef HTL_NDARRAY
-#define HTL_NDARRAY
+#ifndef HTL_NDARRAY_H
+#define HTL_NDARRAY_H
 
-#include <iterator>
-#include <memory>
+#include <algorithm>
+#include <array>
+#include <complex>
+#include <stdexcept>
+#include <string>
 #include <vector>
+
+#include "details/npy.hpp"
 
 namespace htl {
 
-/*
- *  Class: htl::ndarray<T>
- *
- *  Description:
- *
- * */
 template <class T>
 class ndarray {
  public:
-  // constants and types
   using value_type = T;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using pointer = value_type*;
-  using const_pointer = const value_type*;
   using reference = value_type&;
   using const_reference = const value_type&;
+  using pointer = T*;
+  using const_pointer = const T*;
   using iterator = pointer;
-  using const_iterator = const iterator;
+  using const_iterator = const_pointer;
   using reverse_iterator = std::reverse_iterator<iterator>;
-  using const_reverse_iterator = const reverse_iterator;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-  // constructors, copy, move, and assignment
-  template <typename... SHAPE>
-  ndarray(SHAPE... shape, const_reference value = T(), bool row_major = true);
-  ndarray(std::vector<size_type> shape, const_reference value = T(),
-          bool row_major = true);
+  ndarray() : data_(), shape_(), c_continuous_(true), dimensions_(0) {}
 
-  ndarray(const ndarray& other) = default;
-  ndarray(ndarray&& other) = default;
-  constexpr ndarray operator=(const ndarray& other) = default;
-  ~ndarray() = default;
+  ndarray(std::vector<size_type> init_shape, bool c_continuous = true)
+      : data_(), shape_(), c_continuous_(true) {
+    if (init_shape.size() > 0) {
+      shape_ = init_shape;
+      dimensions_ = shape_.size();
 
-  // observers
-  constexpr size_type size() const noexcept;
-  constexpr std::vector<size_type> shape() const noexcept;
-  constexpr size_type dimensions() const noexcept;
-  constexpr bool row_major() const noexcept;
+      size_type ne = init_shape[0];
+      for (size_type i = 1; i < dimensions_; i++) {
+        ne *= init_shape[i];
+      }
 
-  // element access
-  constexpr reference operator[](size_type idx);
-  constexpr const_reference operator[](size_type idx) const;
+      data_.resize(ne);
+
+      c_continuous_ = c_continuous;
+    } else {
+      throw std::runtime_error(
+          "htl::ndarray shape vector must have at least one element");
+    }
+  }
+
+  ndarray(std::vector<value_type> data, std::vector<size_type> init_shape,
+          bool c_continuous = true)
+      : data_(), shape_(), c_continuous_(true) {
+    if (init_shape.size() > 0) {
+      shape_ = init_shape;
+      dimensions_ = shape_.size();
+
+      size_type ne = init_shape[0];
+      for (size_type i = 1; i < dimensions_; i++) {
+        ne *= init_shape[i];
+      }
+
+      if (ne != data.size()) {
+        throw std::runtime_error(
+            "htl::ndarray: shape is incompatible with number of elements");
+      }
+
+      data_ = data;
+
+      c_continuous_ = c_continuous;
+    } else {
+      throw std::runtime_error(
+          "htl::ndarray: shape vector must have at least one element");
+    }
+  }
+
+  reference operator()(const std::vector<size_type>& indices) {
+    size_type indx = c_continuous_ ? c_continuous_index(indices)
+                                   : fortran_continuous_index(indices);
+    return data_[indx];
+  }
+
+  const_reference operator()(const std::vector<size_type>& indices) const {
+    size_type indx = c_continuous_ ? c_continuous_index(indices)
+                                   : fortran_continuous_index(indices);
+    return data_[indx];
+  }
 
   template <typename... INDS>
-  constexpr reference operator()(INDS... inds);
-  template <typename... INDS>
-  constexpr const_reference operator()(INDS... inds) const;
-  constexpr reference operator()(std::vector<size_type> idx);
-  constexpr const_reference operator()(std::vector<size_type> idx) const;
+  reference operator()(INDS... inds) {
+    std::array<size_type, sizeof...(inds)> indices{
+        static_cast<size_type>(inds)...};
+
+    size_type indx = c_continuous_ ? c_continuous_index(indices)
+                                   : fortran_continuous_index(indices);
+    return data_[indx];
+  }
 
   template <typename... INDS>
-  constexpr reference at(INDS... inds);
+  const_reference operator()(INDS... inds) const {
+    std::array<size_type, sizeof...(inds)> indices{
+        static_cast<size_type>(inds)...};
+
+    size_type indx = c_continuous_ ? c_continuous_index(indices)
+                                   : fortran_continuous_index(indices);
+    return data_[indx];
+  }
+
+  reference at(const std::vector<size_type>& indices) {
+    size_type indx = c_continuous_ ? at_c_continuous_index(indices)
+                                   : at_fortran_continuous_index(indices);
+    return data_[indx];
+  }
+
+  const_reference at(const std::vector<size_type>& indices) const {
+    size_type indx = c_continuous_ ? at_c_continuous_index(indices)
+                                   : at_fortran_continuous_index(indices);
+    return data_[indx];
+  }
+
   template <typename... INDS>
-  constexpr const_reference at(INDS... inds) const;
-  constexpr reference at(std::vector<size_type> idx) const;
-  constexpr const_reference at(std::vector<size_type> idx);
+  reference at(INDS... inds) {
+    std::array<size_type, sizeof...(inds)> indices{
+        static_cast<size_type>(inds)...};
 
-  constexpr pointer data() const noexcept;
+    size_type indx = c_continuous_ ? at_c_continuous_index(indices)
+                                   : at_fortran_continuous_index(indices);
+    return data_[indx];
+  }
 
-  // other
-  constexpr void reshape(std::vector<size_type> new_shape);
-  constexpr void fill(const_reference value) noexcept;
+  template <typename... INDS>
+  const_reference at(INDS... inds) const {
+    std::array<size_type, sizeof...(inds)> indices{
+        static_cast<size_type>(inds)...};
 
-  // iterator support
-  constexpr iterator begin() noexcept;
-  constexpr const_iterator begin() const noexcept;
-  constexpr const_iterator cbegin() const noexcept;
+    size_type indx = c_continuous_ ? at_c_continuous_index(indices)
+                                   : at_fortran_continuous_index(indices);
+    return data_[indx];
+  }
 
-  constexpr iterator end() noexcept;
-  constexpr const_iterator end() const noexcept;
-  constexpr const_iterator cend() const noexcept;
+  reference operator[](size_type i) { return data_[i]; }
 
-  constexpr reverse_iterator rbegin() noexcept;
-  constexpr const_reverse_iterator rbegin() const noexcept;
-  constexpr const_reverse_iterator crbegin() const noexcept;
+  const_reference operator[](size_type i) const { return data_[i]; }
 
-  constexpr reverse_iterator rend() noexcept;
-  constexpr const_reverse_iterator rend() const noexcept;
-  constexpr const_reverse_iterator crend() const noexcept;
+  std::vector<size_type> shape() const { return shape_; }
+
+  size_type size() const { return data_.size(); }
+
+  size_type linear_index(const std::vector<size_type>& indices) const {
+    return c_continuous_ ? at_c_continuous_index(indices)
+                         : at_fortran_continuous_index(indices);
+  }
+
+  template <typename... INDS>
+  size_type linear_index(INDS... inds) const {
+    std::array<size_type, sizeof...(inds)> indices{
+        static_cast<size_type>(inds)...};
+    return c_continuous_ ? at_c_continuous_index(indices)
+                         : at_fortran_continuous_index(indices);
+  }
+
+  bool c_continuous() const { return c_continuous_; }
+
+  static ndarray load(std::string fname) {
+    using namespace details;
+
+    // Get expected DType according to T
+    DType expected_dtype;
+    const char* T_type_name = typeid(value_type).name();
+
+    if (T_type_name == typeid(char).name())
+      expected_dtype = DType::CHAR;
+    else if (T_type_name == typeid(unsigned char).name())
+      expected_dtype = DType::UCHAR;
+    else if (T_type_name == typeid(uint16_t).name())
+      expected_dtype = DType::UINT16;
+    else if (T_type_name == typeid(uint32_t).name())
+      expected_dtype = DType::UINT32;
+    else if (T_type_name == typeid(uint64_t).name())
+      expected_dtype = DType::UINT64;
+    else if (T_type_name == typeid(int16_t).name())
+      expected_dtype = DType::INT16;
+    else if (T_type_name == typeid(int32_t).name())
+      expected_dtype = DType::INT32;
+    else if (T_type_name == typeid(int64_t).name())
+      expected_dtype = DType::INT64;
+    else if (T_type_name == typeid(float).name())
+      expected_dtype = DType::FLOAT32;
+    else if (T_type_name == typeid(double).name())
+      expected_dtype = DType::DOUBLE64;
+    else if (T_type_name == typeid(std::complex<float>).name())
+      expected_dtype = DType::COMPLEX64;
+    else if (T_type_name == typeid(std::complex<double>).name())
+      expected_dtype = DType::COMPLEX128;
+    else {
+      throw std::runtime_error(
+          "htl::ndarray: the datatype is not supported by the npy format");
+    }
+
+    // Variables to send to npy function
+    char* data_ptr;
+    std::vector<value_type> data_vector;
+    std::vector<size_type> data_shape;
+    DType data_dtype;
+    bool data_c_continuous;
+
+    // Load data into variables
+    load_npy(fname, data_ptr, data_shape, data_dtype, data_c_continuous);
+
+    // Ensure DType variables match
+    if (expected_dtype != data_dtype) {
+      throw std::runtime_error(
+          "htl::ndarray: template datatype does not match specified datatype "
+          "in npy file");
+    }
+
+    if (data_shape.size() < 1) {
+      throw std::runtime_error(
+          "htl::ndarray: shape vector must have at least one element");
+    }
+
+    // Number of elements
+    size_type ne = data_shape[0];
+    for (size_type i = 1; i < data_shape.size(); i++) {
+      ne *= data_shape[i];
+    }
+
+    data_vector = {reinterpret_cast<pointer>(data_ptr),
+                   reinterpret_cast<pointer>(data_ptr) + ne};
+
+    // Create ndarray object
+    ndarray<value_type> return_object(data_vector, data_shape);
+    return_object.c_continuous_ = data_c_continuous;
+
+    // Free data_ptr
+    delete[] data_ptr;
+
+    // Return object
+    return return_object;
+  }
+
+  void save(const std::string& fname) const {
+    using namespace details;
+
+    // Get expected DType according to T
+    DType dtype;
+    const char* T_type_name = typeid(value_type).name();
+
+    if (T_type_name == typeid(char).name())
+      dtype = DType::CHAR;
+    else if (T_type_name == typeid(unsigned char).name())
+      dtype = DType::UCHAR;
+    else if (T_type_name == typeid(uint16_t).name())
+      dtype = DType::UINT16;
+    else if (T_type_name == typeid(uint32_t).name())
+      dtype = DType::UINT32;
+    else if (T_type_name == typeid(uint64_t).name())
+      dtype = DType::UINT64;
+    else if (T_type_name == typeid(int16_t).name())
+      dtype = DType::INT16;
+    else if (T_type_name == typeid(int32_t).name())
+      dtype = DType::INT32;
+    else if (T_type_name == typeid(int64_t).name())
+      dtype = DType::INT64;
+    else if (T_type_name == typeid(float).name())
+      dtype = DType::FLOAT32;
+    else if (T_type_name == typeid(double).name())
+      dtype = DType::DOUBLE64;
+    else if (T_type_name == typeid(std::complex<float>).name())
+      dtype = DType::COMPLEX64;
+    else if (T_type_name == typeid(std::complex<double>).name())
+      dtype = DType::COMPLEX128;
+    else {
+      throw std::runtime_error(
+          "htl::ndarray: shape vector must have at least one element");
+    }
+
+    // Write data to file
+    write_npy(fname, reinterpret_cast<const char*>(data_.data()), shape_, dtype,
+              c_continuous_);
+  }
+
+  void fill(const_reference val) { std::fill(data_.begin(), data_.end(), val); }
+
+  void reshape(std::vector<size_type> new_shape) {
+    // Ensure new shape has proper dimensions
+    if (new_shape.size() < 1) {
+      throw std::runtime_error(
+          "htl::ndarray: shape vector must have at least one element to "
+          "reshpae");
+    } else {
+      size_type ne = new_shape[0];
+
+      for (size_type i = 1; i < new_shape.size(); i++) {
+        ne *= new_shape[i];
+      }
+
+      if (ne == data_.size()) {
+        shape_ = new_shape;
+        dimensions_ = shape_.size();
+      } else {
+        throw std::runtime_error(
+            "htl::ndarray: new shape is incompatible with number of elements");
+      }
+    }
+  }
+
+  void reallocate(std::vector<size_type> new_shape) {
+    // Ensure new shape has proper dimensions
+    if (new_shape.size() < 1) {
+      throw std::runtime_error(
+          "htl::ndarray: shape vector must have at least one element to "
+          "reallocate");
+    } else {
+      size_type ne = new_shape[0];
+
+      for (size_type i = 1; i < new_shape.size(); i++) {
+        ne *= new_shape[i];
+      }
+
+      shape_ = new_shape;
+      dimensions_ = shape_.size();
+      data_.resize(ne);
+    }
+  }
+
+  iterator begin() noexcept { return reinterpret_cast<iterator>(&data_[0]); }
+
+  const_iterator begin() const noexcept {
+    return reinterpret_cast<const_iterator>(&data_[0]);
+  }
+
+  const_iterator cbegin() const noexcept {
+    return reinterpret_cast<const_iterator>(&data_[0]);
+  }
+
+  iterator end() noexcept {
+    return reinterpret_cast<iterator>(&data_[data_.size()]);
+  }
+
+  const_iterator end() const noexcept {
+    return reinterpret_cast<const_iterator>(&data_[data_.size()]);
+  }
+
+  const_iterator cend() const noexcept {
+    return reinterpret_cast<const_iterator>(&data_[data_.size()]);
+  }
+
+  reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+
+  const_reverse_iterator rbegin() const noexcept {
+    return reverse_iterator(end());
+  }
+
+  const_reverse_iterator crbegin() const noexcept {
+    return reverse_iterator(end());
+  }
+
+  reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+
+  const_reverse_iterator rend() const noexcept {
+    return reverse_iterator(begin());
+  }
+
+  const_reverse_iterator crend() const noexcept {
+    return reverse_iterator(begin());
+  }
 
  private:
   std::vector<value_type> data_;
   std::vector<size_type> shape_;
-  bool row_major_;
+  bool c_continuous_;
+  size_type dimensions_;
+
+  template <class V>
+  size_type at_c_continuous_index(const V& indices) const {
+    // Make sure proper number of indices
+    if (indices.size() != dimensions_) {
+      throw std::runtime_error(
+          "htl::ndarray: improper number of indicies provided");
+    }
+
+    size_type indx = indices[dimensions_ - 1];
+    if (indx >= shape_[dimensions_ - 1]) {
+      throw std::out_of_range("htl::ndarray: provided index out of range");
+    }
+
+    size_type coeff = 1;
+
+    for (size_type i = dimensions_ - 1; i > 0; i--) {
+      if (indices[i] >= shape_[i]) {
+        throw std::out_of_range("htl::ndarray: provided index out of range");
+      }
+
+      coeff *= shape_[i];
+      indx += coeff * indices[i - 1];
+    }
+
+    return indx;
+  }
+
+  template <class V>
+  size_type c_continuous_index(const V& indices) const {
+    size_type indx = indices[dimensions_ - 1];
+    size_type coeff = 1;
+
+    for (size_type i = dimensions_ - 1; i > 0; i--) {
+      coeff *= shape_[i];
+      indx += coeff * indices[i - 1];
+    }
+
+    return indx;
+  }
+
+  template <class V>
+  size_type at_fortran_continuous_index(const V& indices) const {
+    // Make sure proper number of indices
+    if (indices.size() != dimensions_) {
+      throw std::runtime_error(
+          "htl::ndarray: improper number of indicies provided");
+    }
+
+    size_t indx = indices[0];
+    if (indx >= shape_[0]) {
+      throw std::out_of_range("htl::ndarray: provided index out of range");
+    }
+    size_t coeff = 1;
+
+    for (size_t i = 0; i < dimensions_ - 1; i++) {
+      if (indices[i] >= shape_[i]) {
+        throw std::out_of_range("htl::ndarray: provided index out of range");
+      }
+
+      coeff *= shape_[i];
+      indx += coeff * indices[i + 1];
+    }
+
+    return indx;
+  }
+
+  template <class V>
+  size_type fortran_continuous_index(const V& indices) const {
+    size_t indx = indices[0];
+    size_t coeff = 1;
+
+    for (size_t i = 0; i < dimensions_ - 1; i++) {
+      coeff *= shape_[i];
+      indx += coeff * indices[i + 1];
+    }
+
+    return indx;
+  }
 };
 
-};  // namespace htl
+}  // namespace htl
 
-#endif  // HTL_NDARRAY
+#endif
