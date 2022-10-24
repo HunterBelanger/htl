@@ -4,7 +4,7 @@ project(htl
   LANGUAGES CXX
 )
 
-option(HTL_BUILD_TESTS "Compiler tests for HTL" OFF)
+#option(HTL_BUILD_TESTS "Compiler tests for HTL" OFF)
 
 # Create htl library target
 add_library(htl INTERFACE)
@@ -17,14 +17,6 @@ target_include_directories(htl INTERFACE
 
 # Require C++17 standard
 target_compile_features(htl INTERFACE cxx_std_17)
-
-# Build tests if desired
-if(HTL_BUILD_TESTS)
-  find_package(GTest REQUIRED)
-  if(GTest_FOUND)
-    add_subdirectory(tests)
-  endif()
-endif()
 
 # Install
 install(TARGETS htl EXPORT htl)
