@@ -31,9 +31,7 @@ class static_vector {
     check_capacity(count);
 
     try {
-      for (size_type i = 0; i < count; i++) {
-        this->push_back(value);
-      }
+      for (size_type i = 0; i < count; i++) push_back(value);
     } catch (...) {
       clear();
       throw;
@@ -59,9 +57,7 @@ class static_vector {
     check_capacity(std::distance(first, last));
 
     try {
-      for (auto it = first; it != last; it++) {
-        push_back(*it);
-      }
+      for (auto it = first; it != last; it++) push_back(*it);
     } catch (...) {
       clear();
       throw;
@@ -70,9 +66,7 @@ class static_vector {
 
   static_vector(const static_vector& other) : data_(), size_(0) {
     try {
-      for (const auto& val : other) {
-        push_back(val);
-      }
+      for (const auto& val : other) push_back(val);
     } catch (...) {
       clear();
       throw;
@@ -81,9 +75,8 @@ class static_vector {
 
   static_vector(static_vector&& other) : data_(), size_(0) {
     try {
-      for (std::size_t i = 0; i < other.size(); i++) {
+      for (std::size_t i = 0; i < other.size(); i++)
         push_back(std::move(other[i]));
-      }
     } catch (...) {
       clear();
       throw;
@@ -94,9 +87,7 @@ class static_vector {
     check_capacity(init.size());
 
     try {
-      for (auto it = init.begin(); it != init.end(); it++) {
-        push_back(*it);
-      }
+      for (auto it = init.begin(); it != init.end(); it++) push_back(*it);
     } catch (...) {
       clear();
       throw;
@@ -107,9 +98,7 @@ class static_vector {
     clear();
 
     try {
-      for (const auto& item : other) {
-        push_back(item);
-      }
+      for (const auto& item : other) push_back(item);
     } catch (...) {
       clear();
       throw;
@@ -122,9 +111,8 @@ class static_vector {
     clear();
 
     try {
-      for (size_type i = 0; i < other.size(); i++) {
+      for (size_type i = 0; i < other.size(); i++)
         push_back(std::move(other[i]));
-      }
     } catch (...) {
       clear();
       throw;
@@ -137,9 +125,7 @@ class static_vector {
     check_capacity(init.size());
 
     try {
-      for (auto it = init.begin(); it != init.end(); it++) {
-        push_back(*it);
-      }
+      for (auto it = init.begin(); it != init.end(); it++) push_back(*it);
     } catch (...) {
       clear();
       throw;
@@ -185,6 +171,8 @@ class static_vector {
 
   bool empty() const noexcept { return size_ == 0; }
 
+  bool full() const noexcept { return size_ == capacity(); }
+
   size_type size() const noexcept { return size_; }
 
   constexpr size_type max_size() const noexcept { return capacity(); }
@@ -195,9 +183,7 @@ class static_vector {
     if ((std::is_trivially_destructible<value_type>::value == false) &&
         (size_ > 0)) {
       // Call all destructors
-      for (size_type i = 0; i < size_; i++) {
-        index(i).~value_type();
-      }
+      for (size_type i = 0; i < size_; i++) index(i).~value_type();
     }
 
     size_ = 0;
@@ -236,7 +222,7 @@ class static_vector {
     const size_type indx = pos - begin();
 
     // First, move all objects forward count spots
-    std::move_backward(begin()+indx, end(), end() + count);
+    std::move_backward(begin() + indx, end(), end() + count);
 
     // Now insert new element
     for (size_type i = 0; i < count; i++) {
@@ -259,7 +245,7 @@ class static_vector {
 
     // Now insert new element
     for (size_type i = 0; i < count; i++) {
-      new (begin() + indx + i) value_type(first++);
+      new (begin() + indx + i) value_type(*first++);
       size_++;
     }
 
@@ -285,7 +271,7 @@ class static_vector {
   }
 
   template <class... Args>
-  iterator emplace(const_iterator pos, Args... args) {
+  iterator emplace(const_iterator pos, Args&&... args) {
     check_capacity(1);
     const size_type indx = pos - begin();
 
