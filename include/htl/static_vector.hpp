@@ -139,45 +139,45 @@ class static_vector {
     clear();
   }
 
-  reference at(std::size_t i) {
+  [[nodiscard]] reference at(std::size_t i) {
     check_index(i);
 
     return index(i);
   }
 
-  const_reference at(std::size_t i) const {
+  [[nodiscard]] const_reference at(std::size_t i) const {
     check_index(i);
 
     return index(i);
   }
 
-  reference operator[](std::size_t i) { return index(i); }
+  [[nodiscard]] reference operator[](std::size_t i) { return index(i); }
 
-  const_reference operator[](std::size_t i) const { return index(i); }
+  [[nodiscard]] const_reference operator[](std::size_t i) const { return index(i); }
 
-  reference front() { return index(0); }
+  [[nodiscard]] reference front() { return index(0); }
 
-  const_reference front() const { return index(0); }
+  [[nodiscard]] const_reference front() const { return index(0); }
 
-  reference back() { return index(size_ - 1); }
+  [[nodiscard]] reference back() { return index(size_ - 1); }
 
-  const_reference back() const { return index(size_ - 1); }
+  [[nodiscard]] const_reference back() const { return index(size_ - 1); }
 
-  pointer data() { return reinterpret_cast<pointer>(&data_[0]); }
+  [[nodiscard]] pointer data() { return reinterpret_cast<pointer>(&data_[0]); }
 
-  const_pointer data() const {
+  [[nodiscard]] const_pointer data() const {
     return reinterpret_cast<const_pointer>(&data_[0]);
   }
 
-  bool empty() const noexcept { return size_ == 0; }
+  [[nodiscard]] bool empty() const noexcept { return size_ == 0; }
 
-  bool full() const noexcept { return size_ == capacity(); }
+  [[nodiscard]] bool full() const noexcept { return size_ == capacity(); }
 
-  size_type size() const noexcept { return size_; }
+  [[nodiscard]] size_type size() const noexcept { return size_; }
 
-  constexpr size_type max_size() const noexcept { return capacity(); }
+  [[nodiscard]] constexpr size_type max_size() const noexcept { return capacity(); }
 
-  constexpr size_type capacity() const noexcept { return CAPACITY; }
+  [[nodiscard]] constexpr size_type capacity() const noexcept { return CAPACITY; }
 
   void clear() noexcept {
     if ((std::is_trivially_destructible<value_type>::value == false) &&
@@ -378,43 +378,43 @@ class static_vector {
     }
   }
 
-  iterator begin() noexcept { return reinterpret_cast<iterator>(&data_[0]); }
+  [[nodiscard]] iterator begin() noexcept { return reinterpret_cast<iterator>(&data_[0]); }
 
-  const_iterator begin() const noexcept {
+  [[nodiscard]] const_iterator begin() const noexcept {
     return reinterpret_cast<const_iterator>(&data_[0]);
   }
 
-  const_iterator cbegin() const noexcept {
+  [[nodiscard]] const_iterator cbegin() const noexcept {
     return reinterpret_cast<const_iterator>(&data_[0]);
   }
 
-  iterator end() noexcept { return reinterpret_cast<iterator>(&data_[size_]); }
+  [[nodiscard]] iterator end() noexcept { return reinterpret_cast<iterator>(&data_[size_]); }
 
-  const_iterator end() const noexcept {
+  [[nodiscard]] const_iterator end() const noexcept {
     return reinterpret_cast<const_iterator>(&data_[size_]);
   }
 
-  const_iterator cend() const noexcept {
+  [[nodiscard]] const_iterator cend() const noexcept {
     return reinterpret_cast<const_iterator>(&data_[size_]);
   }
 
-  reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+  [[nodiscard]] reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
 
-  const_reverse_iterator rbegin() const noexcept {
+  [[nodiscard]] const_reverse_iterator rbegin() const noexcept {
     return reverse_iterator(end());
   }
 
-  const_reverse_iterator crbegin() const noexcept {
+  [[nodiscard]] const_reverse_iterator crbegin() const noexcept {
     return reverse_iterator(end());
   }
 
-  reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+  [[nodiscard]] reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
 
-  const_reverse_iterator rend() const noexcept {
+  [[nodiscard]] const_reverse_iterator rend() const noexcept {
     return reverse_iterator(begin());
   }
 
-  const_reverse_iterator crend() const noexcept {
+  [[nodiscard]] const_reverse_iterator crend() const noexcept {
     return reverse_iterator(begin());
   }
 
@@ -446,11 +446,11 @@ class static_vector {
     }
   }
 
-  reference index(const std::size_t& i) {
+  [[nodiscard]] reference index(const std::size_t& i) {
     return *reinterpret_cast<pointer>(&data_[i]);
   }
 
-  const_reference index(const std::size_t& i) const {
+  [[nodiscard]] const_reference index(const std::size_t& i) const {
     return *reinterpret_cast<const_pointer>(&data_[i]);
   }
 };

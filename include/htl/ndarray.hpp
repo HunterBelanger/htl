@@ -75,20 +75,20 @@ class ndarray {
     }
   }
 
-  reference operator()(const std::vector<size_type>& indices) {
+  [[nodiscard]] reference operator()(const std::vector<size_type>& indices) {
     size_type indx = c_continuous_ ? c_continuous_index(indices)
                                    : fortran_continuous_index(indices);
     return data_[indx];
   }
 
-  const_reference operator()(const std::vector<size_type>& indices) const {
+  [[nodiscard]] const_reference operator()(const std::vector<size_type>& indices) const {
     size_type indx = c_continuous_ ? c_continuous_index(indices)
                                    : fortran_continuous_index(indices);
     return data_[indx];
   }
 
   template <typename... INDS>
-  reference operator()(INDS... inds) {
+  [[nodiscard]] reference operator()(INDS... inds) {
     std::array<size_type, sizeof...(inds)> indices{
         static_cast<size_type>(inds)...};
 
@@ -98,7 +98,7 @@ class ndarray {
   }
 
   template <typename... INDS>
-  const_reference operator()(INDS... inds) const {
+  [[nodiscard]] const_reference operator()(INDS... inds) const {
     std::array<size_type, sizeof...(inds)> indices{
         static_cast<size_type>(inds)...};
 
@@ -107,20 +107,20 @@ class ndarray {
     return data_[indx];
   }
 
-  reference at(const std::vector<size_type>& indices) {
+  [[nodiscard]] reference at(const std::vector<size_type>& indices) {
     size_type indx = c_continuous_ ? at_c_continuous_index(indices)
                                    : at_fortran_continuous_index(indices);
     return data_[indx];
   }
 
-  const_reference at(const std::vector<size_type>& indices) const {
+  [[nodiscard]] const_reference at(const std::vector<size_type>& indices) const {
     size_type indx = c_continuous_ ? at_c_continuous_index(indices)
                                    : at_fortran_continuous_index(indices);
     return data_[indx];
   }
 
   template <typename... INDS>
-  reference at(INDS... inds) {
+  [[nodiscard]] reference at(INDS... inds) {
     std::array<size_type, sizeof...(inds)> indices{
         static_cast<size_type>(inds)...};
 
@@ -130,7 +130,7 @@ class ndarray {
   }
 
   template <typename... INDS>
-  const_reference at(INDS... inds) const {
+  [[nodiscard]] const_reference at(INDS... inds) const {
     std::array<size_type, sizeof...(inds)> indices{
         static_cast<size_type>(inds)...};
 
@@ -139,30 +139,30 @@ class ndarray {
     return data_[indx];
   }
 
-  reference operator[](size_type i) { return data_[i]; }
+  [[nodiscard]] reference operator[](size_type i) { return data_[i]; }
 
-  const_reference operator[](size_type i) const { return data_[i]; }
+  [[nodiscard]] const_reference operator[](size_type i) const { return data_[i]; }
 
-  std::vector<size_type> shape() const { return shape_; }
+  [[nodiscard]] std::vector<size_type> shape() const { return shape_; }
 
-  size_type size() const { return data_.size(); }
+  [[nodiscard]] size_type size() const { return data_.size(); }
 
-  size_type linear_index(const std::vector<size_type>& indices) const {
+  [[nodiscard]] size_type linear_index(const std::vector<size_type>& indices) const {
     return c_continuous_ ? at_c_continuous_index(indices)
                          : at_fortran_continuous_index(indices);
   }
 
   template <typename... INDS>
-  size_type linear_index(INDS... inds) const {
+  [[nodiscard]] size_type linear_index(INDS... inds) const {
     std::array<size_type, sizeof...(inds)> indices{
         static_cast<size_type>(inds)...};
     return c_continuous_ ? at_c_continuous_index(indices)
                          : at_fortran_continuous_index(indices);
   }
 
-  bool c_continuous() const { return c_continuous_; }
+  [[nodiscard]] bool c_continuous() const { return c_continuous_; }
 
-  static ndarray load(std::string fname) {
+  [[nodiscard]] static ndarray load(std::string fname) {
     using namespace details;
 
     // Get expected DType according to T
@@ -325,45 +325,45 @@ class ndarray {
     }
   }
 
-  iterator begin() noexcept { return reinterpret_cast<iterator>(&data_[0]); }
+  [[nodiscard]] iterator begin() noexcept { return reinterpret_cast<iterator>(&data_[0]); }
 
-  const_iterator begin() const noexcept {
+  [[nodiscard]] const_iterator begin() const noexcept {
     return reinterpret_cast<const_iterator>(&data_[0]);
   }
 
-  const_iterator cbegin() const noexcept {
+  [[nodiscard]] const_iterator cbegin() const noexcept {
     return reinterpret_cast<const_iterator>(&data_[0]);
   }
 
-  iterator end() noexcept {
+  [[nodiscard]] iterator end() noexcept {
     return reinterpret_cast<iterator>(&data_[data_.size()]);
   }
 
-  const_iterator end() const noexcept {
+  [[nodiscard]] const_iterator end() const noexcept {
     return reinterpret_cast<const_iterator>(&data_[data_.size()]);
   }
 
-  const_iterator cend() const noexcept {
+  [[nodiscard]] const_iterator cend() const noexcept {
     return reinterpret_cast<const_iterator>(&data_[data_.size()]);
   }
 
-  reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+  [[nodiscard]] reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
 
-  const_reverse_iterator rbegin() const noexcept {
+  [[nodiscard]] const_reverse_iterator rbegin() const noexcept {
     return reverse_iterator(end());
   }
 
-  const_reverse_iterator crbegin() const noexcept {
+  [[nodiscard]] const_reverse_iterator crbegin() const noexcept {
     return reverse_iterator(end());
   }
 
-  reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+  [[nodiscard]] reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
 
-  const_reverse_iterator rend() const noexcept {
+  [[nodiscard]] const_reverse_iterator rend() const noexcept {
     return reverse_iterator(begin());
   }
 
-  const_reverse_iterator crend() const noexcept {
+  [[nodiscard]] const_reverse_iterator crend() const noexcept {
     return reverse_iterator(begin());
   }
 
@@ -374,7 +374,7 @@ class ndarray {
   size_type dimensions_;
 
   template <class V>
-  size_type at_c_continuous_index(const V& indices) const {
+  [[nodiscard]] size_type at_c_continuous_index(const V& indices) const {
     // Make sure proper number of indices
     if (indices.size() != dimensions_) {
       throw std::runtime_error(
@@ -401,7 +401,7 @@ class ndarray {
   }
 
   template <class V>
-  size_type c_continuous_index(const V& indices) const {
+  [[nodiscard]] size_type c_continuous_index(const V& indices) const {
     size_type indx = indices[dimensions_ - 1];
     size_type coeff = 1;
 
@@ -414,7 +414,7 @@ class ndarray {
   }
 
   template <class V>
-  size_type at_fortran_continuous_index(const V& indices) const {
+  [[nodiscard]] size_type at_fortran_continuous_index(const V& indices) const {
     // Make sure proper number of indices
     if (indices.size() != dimensions_) {
       throw std::runtime_error(
@@ -440,7 +440,7 @@ class ndarray {
   }
 
   template <class V>
-  size_type fortran_continuous_index(const V& indices) const {
+  [[nodiscard]] size_type fortran_continuous_index(const V& indices) const {
     size_t indx = indices[0];
     size_t coeff = 1;
 
