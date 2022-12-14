@@ -4,8 +4,6 @@ project(htl
   LANGUAGES CXX
 )
 
-#option(HTL_BUILD_TESTS "Compiler tests for HTL" OFF)
-
 # Create htl library target
 add_library(htl INTERFACE)
 
@@ -17,8 +15,3 @@ target_include_directories(htl INTERFACE
 
 # Require C++20 standard
 target_compile_features(htl INTERFACE cxx_std_20)
-
-# Install
-install(TARGETS htl EXPORT htl)
-install(EXPORT htl FILE htl-config.cmake DESTINATION share/cmake/htl)
-install(DIRECTORY include/htl DESTINATION include)
