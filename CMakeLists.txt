@@ -15,8 +15,8 @@ target_include_directories(htl INTERFACE
   $<INSTALL_INTERFACE:include>
 )
 
-# Require C++17 standard
-target_compile_features(htl INTERFACE cxx_std_17)
+# Require C++20 standard
+target_compile_features(htl INTERFACE cxx_std_20)
 
 # Install
 install(TARGETS htl EXPORT htl)
