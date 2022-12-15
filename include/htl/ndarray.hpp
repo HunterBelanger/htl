@@ -12,7 +12,7 @@
 
 namespace htl {
 
-template <class T>
+template <typename T>
 class ndarray {
  public:
   using value_type = T;
@@ -162,7 +162,7 @@ class ndarray {
 
   [[nodiscard]] bool c_continuous() const { return c_continuous_; }
 
-  [[nodiscard]] static ndarray load(std::string fname) {
+  [[nodiscard]] static ndarray load(const std::string& fname) {
     using namespace details;
 
     // Get expected DType according to T
