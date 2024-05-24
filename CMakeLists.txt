@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.11)
 project(htl
   DESCRIPTION "Template library of containers not provided by the STL"
   LANGUAGES CXX
