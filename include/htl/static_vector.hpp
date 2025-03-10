@@ -42,10 +42,7 @@ class static_vector {
     check_capacity(count);
 
     try {
-      for (size_type i = 0; i < count; i++) {
-        new (static_cast<void*>(&data_[size_])) value_type();
-        size_++;
-      }
+      for (size_type i = 0; i < count; i++) emplace_back();
     } catch (...) {
       clear();
       throw;
@@ -95,27 +92,31 @@ class static_vector {
   }
 
   static_vector& operator=(const static_vector& other) {
-    clear();
-
-    try {
-      for (const auto& item : other) push_back(item);
-    } catch (...) {
+    if (this != &other) {
       clear();
-      throw;
+
+      try {
+        for (const auto& item : other) push_back(item);
+      } catch (...) {
+        clear();
+        throw;
+      }
     }
 
     return *this;
   }
 
-  static_vector& operator=(static_vector&& other) noexcept {
-    clear();
-
-    try {
-      for (size_type i = 0; i < other.size(); i++)
-        push_back(std::move(other[i]));
-    } catch (...) {
+  static_vector& operator=(static_vector&& other) {
+    if (this != &other) {
       clear();
-      throw;
+
+      try {
+        for (size_type i = 0; i < other.size(); i++)
+          push_back(std::move(other[i]));
+      } catch (...) {
+        clear();
+        throw;
+      }
     }
 
     return *this;
@@ -123,6 +124,7 @@ class static_vector {
 
   static_vector& operator=(std::initializer_list<value_type> init) {
     check_capacity(init.size());
+    clear();
 
     try {
       for (auto it = init.begin(); it != init.end(); it++) push_back(*it);
@@ -153,7 +155,9 @@ class static_vector {
 
   [[nodiscard]] reference operator[](std::size_t i) { return index(i); }
 
-  [[nodiscard]] const_reference operator[](std::size_t i) const { return index(i); }
+  [[nodiscard]] const_reference operator[](std::size_t i) const {
+    return index(i);
+  }
 
   [[nodiscard]] reference front() { return index(0); }
 
@@ -175,9 +179,13 @@ class static_vector {
 
   [[nodiscard]] size_type size() const noexcept { return size_; }
 
-  [[nodiscard]] constexpr size_type max_size() const noexcept { return capacity(); }
+  [[nodiscard]] constexpr size_type max_size() const noexcept {
+    return capacity();
+  }
 
-  [[nodiscard]] constexpr size_type capacity() const noexcept { return CAPACITY; }
+  [[nodiscard]] constexpr size_type capacity() const noexcept {
+    return CAPACITY;
+  }
 
   void clear() noexcept {
     if ((std::is_trivially_destructible<value_type>::value == false) &&
@@ -356,10 +364,7 @@ class static_vector {
     } else if (count > size_) {
       check_capacity(diff);
 
-      for (size_type i = 0; i < diff; i++) {
-        new (static_cast<void*>(&data_[size_])) value_type();
-        size_++;
-      }
+      for (size_type i = 0; i < diff; i++) emplace_back();
     }
   }
 
@@ -371,14 +376,13 @@ class static_vector {
     } else if (count > size_) {
       check_capacity(diff);
 
-      for (size_type i = 0; i < diff; i++) {
-        new (static_cast<void*>(&data_[size_])) value_type(value);
-        size_++;
-      }
+      for (size_type i = 0; i < diff; i++) push_back(value);
     }
   }
 
-  [[nodiscard]] iterator begin() noexcept { return reinterpret_cast<iterator>(&data_[0]); }
+  [[nodiscard]] iterator begin() noexcept {
+    return reinterpret_cast<iterator>(&data_[0]);
+  }
 
   [[nodiscard]] const_iterator begin() const noexcept {
     return reinterpret_cast<const_iterator>(&data_[0]);
@@ -388,7 +392,9 @@ class static_vector {
     return reinterpret_cast<const_iterator>(&data_[0]);
   }
 
-  [[nodiscard]] iterator end() noexcept { return reinterpret_cast<iterator>(&data_[size_]); }
+  [[nodiscard]] iterator end() noexcept {
+    return reinterpret_cast<iterator>(&data_[size_]);
+  }
 
   [[nodiscard]] const_iterator end() const noexcept {
     return reinterpret_cast<const_iterator>(&data_[size_]);
@@ -398,7 +404,9 @@ class static_vector {
     return reinterpret_cast<const_iterator>(&data_[size_]);
   }
 
-  [[nodiscard]] reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+  [[nodiscard]] reverse_iterator rbegin() noexcept {
+    return reverse_iterator(end());
+  }
 
   [[nodiscard]] const_reverse_iterator rbegin() const noexcept {
     return reverse_iterator(end());
@@ -408,7 +416,9 @@ class static_vector {
     return reverse_iterator(end());
   }
 
-  [[nodiscard]] reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+  [[nodiscard]] reverse_iterator rend() noexcept {
+    return reverse_iterator(begin());
+  }
 
   [[nodiscard]] const_reverse_iterator rend() const noexcept {
     return reverse_iterator(begin());
